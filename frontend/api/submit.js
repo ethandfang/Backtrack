@@ -1,4 +1,4 @@
-const Anthropic = require('@anthropic-ai/sdk');
+import Anthropic from '@anthropic-ai/sdk';
 
 const SYSTEM_PROMPT = `You are a music producer's assistant. Your job is to take plain English descriptions of beats and translate them into detailed, optimized prompts for an AI music generator. When given an edit command, take the previous prompt as context and mutate it accordingly. Always include genre, BPM, key, mood, instrumentation, and energy level in your output prompt. Output only the music generation prompt, nothing else. Keep your output under 400 characters.`;
 
@@ -50,7 +50,7 @@ async function submitSunoJob(prompt) {
   return taskId;
 }
 
-module.exports = async function handler(req, res) {
+export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   const { message, previousPrompt } = req.body ?? {};
@@ -65,4 +65,4 @@ module.exports = async function handler(req, res) {
     console.error('[/api/submit]', err.message);
     res.status(500).json({ error: err.message });
   }
-};
+}
