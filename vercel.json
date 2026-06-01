@@ -2,7 +2,7 @@
   "buildCommand": "cd frontend && npm install && npm run build",
   "outputDirectory": "frontend/dist",
   "functions": {
-    "api/submit.js": { "maxDuration": 30 },
-    "api/poll.js":   { "maxDuration": 30 }
+    "frontend/api/submit.js": { "maxDuration": 30 },
+    "frontend/api/poll.js":   { "maxDuration": 30 }
   }
 }
