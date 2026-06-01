@@ -1,66 +1,63 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+
+const BAR_COUNT = 60;
+
+function makeRandomBars() {
+  return Array.from({ length: BAR_COUNT }, () => ({ h: 15 + Math.random() * 75 }));
+}
 
 export default function AudioPlayer({ audioRef, audioUrl }) {
-  const [playing, setPlaying] = useState(false);
+  const [playing, setPlaying]       = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
-  const [duration, setDuration] = useState(0);
-  const [volume, setVolume] = useState(1);
+  const [duration, setDuration]     = useState(0);
+  const [volume, setVolume]         = useState(1);
+  const [bars, setBars]             = useState(makeRandomBars);
+  const animRef                     = useRef(null);
 
+  // Wire up audio events
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
-
-    const onPlay = () => setPlaying(true);
-    const onPause = () => setPlaying(false);
-    const onTimeUpdate = () => setCurrentTime(audio.currentTime);
-    const onDurationChange = () => setDuration(audio.duration);
-    const onEnded = () => setPlaying(false);
-
+    const onPlay    = () => setPlaying(true);
+    const onPause   = () => setPlaying(false);
+    const onTime    = () => setCurrentTime(audio.currentTime);
+    const onDur     = () => setDuration(audio.duration);
+    const onEnd     = () => setPlaying(false);
     audio.addEventListener('play', onPlay);
     audio.addEventListener('pause', onPause);
-    audio.addEventListener('timeupdate', onTimeUpdate);
-    audio.addEventListener('durationchange', onDurationChange);
-    audio.addEventListener('ended', onEnded);
-
+    audio.addEventListener('timeupdate', onTime);
+    audio.addEventListener('durationchange', onDur);
+    audio.addEventListener('ended', onEnd);
     return () => {
       audio.removeEventListener('play', onPlay);
       audio.removeEventListener('pause', onPause);
-      audio.removeEventListener('timeupdate', onTimeUpdate);
-      audio.removeEventListener('durationchange', onDurationChange);
-      audio.removeEventListener('ended', onEnded);
+      audio.removeEventListener('timeupdate', onTime);
+      audio.removeEventListener('durationchange', onDur);
+      audio.removeEventListener('ended', onEnd);
     };
   }, [audioRef]);
 
-  // Reset state when track changes
+  // Reset on track change
   useEffect(() => {
     setCurrentTime(0);
     setDuration(0);
     setPlaying(false);
   }, [audioUrl]);
 
+  // Animate waveform bars while playing
+  useEffect(() => {
+    if (playing) {
+      animRef.current = setInterval(() => setBars(makeRandomBars()), 120);
+    } else {
+      clearInterval(animRef.current);
+    }
+    return () => clearInterval(animRef.current);
+  }, [playing]);
+
   function togglePlay() {
     const audio = audioRef.current;
     if (!audio) return;
-    if (playing) {
-      audio.pause();
-    } else {
-      audio.play().catch(console.error);
-    }
-  }
-
-  function handleSeek(e) {
-    const audio = audioRef.current;
-    if (!audio || !duration) return;
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const pct = x / rect.width;
-    audio.currentTime = pct * duration;
-  }
-
-  function handleVolume(e) {
-    const v = parseFloat(e.target.value);
-    setVolume(v);
-    if (audioRef.current) audioRef.current.volume = v;
+    playing ? audio.pause() : audio.play().catch(console.error);
   }
 
   function restart() {
@@ -70,43 +67,73 @@ export default function AudioPlayer({ audioRef, audioUrl }) {
     audio.play().catch(console.error);
   }
 
+  function handleSeek(e) {
+    const audio = audioRef.current;
+    if (!audio || !duration) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    audio.currentTime = ((e.clientX - rect.left) / rect.width) * duration;
+  }
+
+  function handleVolume(e) {
+    const v = parseFloat(e.target.value);
+    setVolume(v);
+    if (audioRef.current) audioRef.current.volume = v;
+  }
+
   const progress = duration > 0 ? currentTime / duration : 0;
+  const played   = Math.round(progress * BAR_COUNT);
 
   return (
-    <div style={styles.player}>
-      {/* Hidden native audio element */}
+    <div style={P.wrap}>
+      {/* Hidden audio element */}
       <audio ref={audioRef} src={audioUrl} preload="auto" />
 
-      {/* Progress bar */}
-      <div style={styles.progressWrap} onClick={handleSeek} title="Seek">
-        <div style={styles.progressTrack}>
-          <div style={{ ...styles.progressFill, width: `${progress * 100}%` }} />
-          <div style={{ ...styles.progressThumb, left: `${progress * 100}%` }} />
-        </div>
+      {/* Waveform */}
+      <div style={P.waveform} onClick={handleSeek} title="Seek">
+        {bars.map((b, i) => (
+          <div
+            key={i}
+            style={{
+              ...P.bar,
+              height: `${b.h}%`,
+              background: i < played ? 'var(--tertiary)' : 'rgba(255,255,255,0.15)',
+              boxShadow: i < played ? '0 0 6px rgba(76,215,246,0.5)' : 'none',
+            }}
+          />
+        ))}
       </div>
 
       {/* Time */}
-      <div style={styles.timeRow}>
-        <span style={styles.timeLabel}>{fmt(currentTime)}</span>
-        <span style={styles.timeLabel}>{duration ? fmt(duration) : '--:--'}</span>
+      <div style={P.timeRow}>
+        <span style={P.time}>{fmt(currentTime)}</span>
+        <span style={P.time}>{duration ? fmt(duration) : '--:--'}</span>
       </div>
 
       {/* Controls */}
-      <div style={styles.controls}>
-        <button style={styles.controlBtn} onClick={restart} title="Restart">⏮</button>
-        <button style={styles.playBtn} onClick={togglePlay}>
-          {playing ? '⏸' : '▶'}
+      <div style={P.controls}>
+        <button style={P.iconBtn} onClick={restart} title="Restart">
+          <span className="material-symbols-outlined" style={{ fontSize: 26 }}>skip_previous</span>
         </button>
-        <div style={styles.volumeWrap}>
-          <span style={styles.volIcon}>🔊</span>
+
+        <button
+          style={P.playBtn}
+          onClick={togglePlay}
+          onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.08)'; }}
+          onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; }}
+        >
+          <span className="material-symbols-outlined" style={{ fontSize: 30, fontVariationSettings: "'FILL' 1" }}>
+            {playing ? 'pause' : 'play_arrow'}
+          </span>
+        </button>
+
+        <div style={P.volRow}>
+          <span className="material-symbols-outlined" style={{ fontSize: 18, color: 'var(--text-muted)' }}>
+            {volume === 0 ? 'volume_off' : volume < 0.5 ? 'volume_down' : 'volume_up'}
+          </span>
           <input
-            type="range"
-            min="0"
-            max="1"
-            step="0.05"
-            value={volume}
-            onChange={handleVolume}
-            style={styles.volSlider}
+            type="range" min="0" max="1" step="0.05"
+            value={volume} onChange={handleVolume}
+            style={{ width: 72, cursor: 'pointer' }}
           />
         </div>
       </div>
@@ -121,91 +148,44 @@ function fmt(secs) {
   return `${m}:${s}`;
 }
 
-const styles = {
-  player: {
-    borderTop: '1px solid var(--border)',
-    background: 'var(--bg-surface)',
-    padding: '16px 32px 20px',
+const P = {
+  wrap: { display: 'flex', flexDirection: 'column', gap: 6, width: '100%' },
+  waveform: {
+    display: 'flex', alignItems: 'center', gap: '2px',
+    height: 64, cursor: 'pointer',
+    padding: '4px 0',
   },
-  progressWrap: {
-    cursor: 'pointer',
-    padding: '8px 0',
-  },
-  progressTrack: {
-    height: 4,
-    background: 'var(--border)',
-    borderRadius: 2,
-    position: 'relative',
-  },
-  progressFill: {
-    height: '100%',
-    background: 'var(--accent)',
-    borderRadius: 2,
-    transition: 'width 0.1s linear',
-  },
-  progressThumb: {
-    position: 'absolute',
-    top: '50%',
-    transform: 'translate(-50%, -50%)',
-    width: 12,
-    height: 12,
-    borderRadius: '50%',
-    background: 'var(--accent)',
-    boxShadow: '0 0 8px var(--accent-glow)',
+  bar: {
+    flex: 1, borderRadius: '2px 2px 1px 1px',
+    minHeight: 3,
+    transition: 'height 0.1s ease',
   },
   timeRow: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    marginTop: 4,
-    marginBottom: 12,
+    display: 'flex', justifyContent: 'space-between', marginTop: 2,
   },
-  timeLabel: {
-    fontSize: 11,
-    color: 'var(--text-muted)',
+  time: {
     fontFamily: "'JetBrains Mono', monospace",
+    fontSize: 11, color: 'var(--text-muted)',
   },
   controls: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 20,
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    gap: 20, marginTop: 8,
   },
-  controlBtn: {
-    background: 'transparent',
-    border: 'none',
-    color: 'var(--text-secondary)',
-    fontSize: 18,
-    cursor: 'pointer',
-    padding: '4px 8px',
-    borderRadius: 6,
-    lineHeight: 1,
+  iconBtn: {
+    background: 'transparent', border: 'none',
+    color: 'var(--text-muted)', cursor: 'pointer',
+    display: 'flex', alignItems: 'center', padding: 4,
+    borderRadius: 8, transition: 'color 0.15s',
   },
   playBtn: {
-    width: 48,
-    height: 48,
-    borderRadius: '50%',
-    background: 'var(--accent)',
-    border: 'none',
-    color: '#fff',
-    fontSize: 20,
-    cursor: 'pointer',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    boxShadow: '0 0 20px var(--accent-glow)',
-    transition: 'transform 0.1s',
+    width: 52, height: 52, borderRadius: '50%',
+    background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+    border: 'none', color: '#fff', cursor: 'pointer',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    boxShadow: '0 0 20px rgba(99,102,241,0.45)',
+    transition: 'transform 0.15s',
   },
-  volumeWrap: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 8,
-  },
-  volIcon: {
-    fontSize: 16,
-  },
-  volSlider: {
-    width: 80,
-    accentColor: 'var(--accent)',
-    cursor: 'pointer',
+  volRow: {
+    display: 'flex', alignItems: 'center', gap: 6,
   },
 };

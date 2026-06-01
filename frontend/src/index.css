@@ -5,20 +5,24 @@
 }
 
 :root {
-  --bg-base: #0a0a0f;
-  --bg-surface: #111118;
-  --bg-card: #16161f;
-  --bg-hover: #1e1e2a;
-  --border: #252535;
-  --border-bright: #3a3a55;
-  --accent: #7c6aff;
-  --accent-glow: rgba(124, 106, 255, 0.25);
-  --accent-dim: #4a3fa0;
-  --text-primary: #f0f0ff;
-  --text-secondary: #9090b0;
-  --text-muted: #5a5a7a;
+  --bg-base: #020205;
+  --bg-surface: rgba(19, 19, 25, 0.6);
+  --bg-card: rgba(19, 19, 25, 0.4);
+  --bg-hover: rgba(255, 255, 255, 0.05);
+  --border: rgba(255, 255, 255, 0.1);
+  --border-accent: rgba(195, 192, 255, 0.25);
+  --accent: #c3c0ff;
+  --accent-indigo: #6366f1;
+  --accent-glow: rgba(195, 192, 255, 0.15);
+  --accent-container: #4f46e5;
+  --tertiary: #4cd7f6;
+  --tertiary-glow: rgba(76, 215, 246, 0.2);
+  --secondary: #d0bcff;
+  --text-primary: #e4e1ea;
+  --text-secondary: #c7c4d8;
+  --text-muted: #918fa1;
   --success: #4ade80;
-  --error: #f87171;
+  --error: #ffb4ab;
   --warn: #fbbf24;
 }
 
@@ -32,17 +36,51 @@ body {
 
 #root {
   height: 100vh;
-  display: flex;
-  flex-direction: column;
+  overflow: hidden;
 }
 
-::-webkit-scrollbar {
-  width: 6px;
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(195, 192, 255, 0.2); border-radius: 10px; }
+
+input[type="range"] { accent-color: #6366f1; }
+
+.material-symbols-outlined {
+  font-family: 'Material Symbols Outlined', sans-serif;
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  font-style: normal;
+  user-select: none;
+  line-height: 1;
+  display: inline-block;
+  vertical-align: middle;
 }
-::-webkit-scrollbar-track {
-  background: transparent;
+
+@keyframes orbPulse {
+  0%, 100% { opacity: 0.5; transform: scale(1); }
+  50% { opacity: 0.85; transform: scale(1.18); }
 }
-::-webkit-scrollbar-thumb {
-  background: var(--border-bright);
-  border-radius: 3px;
+
+@keyframes orb-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.2; }
+}
+
+@keyframes eq-bounce {
+  0%, 100% { transform: scaleY(0.15); opacity: 0.25; }
+  50% { transform: scaleY(1); opacity: 1; }
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes starTwinkle {
+  0%, 100% { opacity: 0.2; }
+  50% { opacity: 1; }
 }

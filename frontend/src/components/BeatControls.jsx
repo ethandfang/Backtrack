@@ -1,177 +1,176 @@
-const MOODS = ['dark', 'uplifting', 'aggressive', 'chill', 'cinematic'];
-const ENERGY_LEVELS = ['low', 'medium', 'high'];
+const MOODS = ['Dark', 'Uplifting', 'Aggressive', 'Chill', 'Cinematic'];
+const ENERGY = ['low', 'medium', 'high'];
 
 export default function BeatControls({ controls, onChange, onRegenerate, loading, hasBeat }) {
   const { bpm, energy, moods } = controls;
 
   function toggleMood(mood) {
-    const next = moods.includes(mood)
-      ? moods.filter((m) => m !== mood)
-      : [...moods, mood];
+    const lower = mood.toLowerCase();
+    const next = moods.includes(lower)
+      ? moods.filter((m) => m !== lower)
+      : [...moods, lower];
     onChange({ ...controls, moods: next });
   }
 
   return (
-    <div style={styles.panel}>
-      <div style={styles.row}>
-        {/* BPM slider */}
-        <div style={styles.controlGroup}>
-          <div style={styles.labelRow}>
-            <span style={styles.label}>BPM</span>
-            <span style={styles.value}>{bpm}</span>
+    <div style={C.panel}>
+      <div style={C.grid}>
+        {/* BPM */}
+        <div style={C.group}>
+          <div style={C.labelRow}>
+            <span style={C.label}>TEMPO (BPM)</span>
+            <span style={C.bpmVal}>{bpm}</span>
           </div>
           <input
-            type="range"
-            min={60}
-            max={200}
-            value={bpm}
+            type="range" min={60} max={200} value={bpm}
             onChange={(e) => onChange({ ...controls, bpm: Number(e.target.value) })}
-            style={styles.slider}
+            style={{ width: '100%', cursor: 'pointer' }}
           />
-          <div style={styles.rangeEnds}>
-            <span>60</span>
-            <span>200</span>
-          </div>
+          <div style={C.rangeEnds}><span>60</span><span>200</span></div>
         </div>
 
         {/* Energy */}
-        <div style={styles.controlGroup}>
-          <span style={styles.label}>Energy</span>
-          <div style={styles.btnGroup}>
-            {ENERGY_LEVELS.map((level) => (
+        <div style={C.group}>
+          <span style={C.label}>ENERGY DENSITY</span>
+          <div style={C.pills}>
+            {ENERGY.map((lvl) => (
               <button
-                key={level}
-                onClick={() => onChange({ ...controls, energy: level })}
+                key={lvl}
+                onClick={() => onChange({ ...controls, energy: lvl })}
                 style={{
-                  ...styles.toggleBtn,
-                  ...(energy === level ? styles.toggleBtnOn : {}),
+                  ...C.pill,
+                  ...(energy === lvl ? C.pillActive : {}),
                 }}
               >
-                {level}
+                {lvl.charAt(0).toUpperCase() + lvl.slice(1)}
               </button>
             ))}
           </div>
         </div>
+      </div>
 
-        {/* Moods */}
-        <div style={styles.controlGroup}>
-          <span style={styles.label}>Mood</span>
-          <div style={styles.btnGroup}>
-            {MOODS.map((mood) => (
+      {/* Moods */}
+      <div style={C.moodSection}>
+        <span style={C.label}>SONIC MOOD</span>
+        <div style={C.moodPills}>
+          {MOODS.map((mood) => {
+            const active = moods.includes(mood.toLowerCase());
+            return (
               <button
                 key={mood}
                 onClick={() => toggleMood(mood)}
-                style={{
-                  ...styles.toggleBtn,
-                  ...(moods.includes(mood) ? styles.toggleBtnOn : {}),
-                }}
+                style={{ ...C.moodPill, ...(active ? C.moodPillActive : {}) }}
               >
                 {mood}
               </button>
-            ))}
-          </div>
+            );
+          })}
         </div>
-
-        {/* Regenerate */}
-        {hasBeat && (
-          <button
-            onClick={onRegenerate}
-            disabled={loading}
-            style={{ ...styles.regenBtn, opacity: loading ? 0.45 : 1 }}
-          >
-            ↺ Regenerate
-          </button>
-        )}
       </div>
+
+      {/* Regenerate */}
+      {hasBeat && (
+        <button
+          onClick={onRegenerate}
+          disabled={loading}
+          style={{ ...C.regenBtn, opacity: loading ? 0.45 : 1 }}
+          onMouseEnter={e => { if (!loading) e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; }}
+          onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; }}
+        >
+          <span className="material-symbols-outlined" style={{ fontSize: 18, transition: 'transform 0.5s', transform: loading ? 'rotate(180deg)' : 'none' }}>
+            refresh
+          </span>
+          Regenerate Core Sequence
+        </button>
+      )}
     </div>
   );
 }
 
-const styles = {
+const C = {
   panel: {
-    borderTop: '1px solid var(--border)',
-    padding: '12px 32px 14px',
-    background: 'var(--bg-surface)',
+    backdropFilter: 'blur(40px)',
+    background: 'rgba(19,19,25,0.5)',
+    borderTop: '1px solid rgba(255,255,255,0.07)',
+    padding: '16px 24px 18px',
     flexShrink: 0,
   },
-  row: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 24,
-    flexWrap: 'wrap',
+  grid: {
+    display: 'grid',
+    gridTemplateColumns: '1fr 1fr',
+    gap: '16px 32px',
+    marginBottom: 14,
   },
-  controlGroup: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: 6,
-    minWidth: 120,
+  group: {
+    display: 'flex', flexDirection: 'column', gap: 8,
   },
   labelRow: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
   },
   label: {
-    fontSize: 10,
-    fontWeight: 700,
-    color: 'var(--text-muted)',
-    textTransform: 'uppercase',
-    letterSpacing: '0.08em',
-  },
-  value: {
-    fontSize: 12,
-    fontWeight: 700,
-    color: 'var(--accent)',
     fontFamily: "'JetBrains Mono', monospace",
+    fontSize: 11, color: 'var(--text-muted)',
+    textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 500,
   },
-  slider: {
-    width: '100%',
-    accentColor: 'var(--accent)',
-    cursor: 'pointer',
-    height: 4,
+  bpmVal: {
+    fontFamily: "'JetBrains Mono', monospace",
+    fontSize: 13, color: 'var(--accent)', fontWeight: 600,
   },
   rangeEnds: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    fontSize: 10,
-    color: 'var(--text-muted)',
+    display: 'flex', justifyContent: 'space-between',
+    fontFamily: "'JetBrains Mono', monospace",
+    fontSize: 10, color: 'var(--text-muted)',
   },
-  btnGroup: {
-    display: 'flex',
-    gap: 4,
-    flexWrap: 'wrap',
+  pills: {
+    display: 'flex', gap: 6,
   },
-  toggleBtn: {
+  pill: {
+    flex: 1, padding: '6px 4px',
+    borderRadius: 9999,
+    border: '1px solid rgba(255,255,255,0.1)',
     background: 'transparent',
-    border: '1px solid var(--border)',
     color: 'var(--text-muted)',
-    fontSize: 11,
-    fontWeight: 600,
-    padding: '4px 10px',
-    borderRadius: 4,
-    cursor: 'pointer',
-    letterSpacing: '0.02em',
-    fontFamily: "'Inter', sans-serif",
-    transition: 'all 0.12s',
+    fontFamily: "'JetBrains Mono', monospace",
+    fontSize: 11, cursor: 'pointer',
+    transition: 'all 0.15s',
   },
-  toggleBtnOn: {
-    background: 'var(--accent-glow)',
-    border: '1px solid var(--accent)',
+  pillActive: {
+    border: '2px solid var(--accent)',
+    background: 'rgba(195,192,255,0.1)',
     color: 'var(--accent)',
+    boxShadow: '0 0 10px rgba(195,192,255,0.15)',
+  },
+  moodSection: {
+    display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 14,
+  },
+  moodPills: {
+    display: 'flex', gap: 6, flexWrap: 'wrap',
+  },
+  moodPill: {
+    padding: '5px 14px',
+    borderRadius: 9999,
+    border: '1px solid rgba(255,255,255,0.1)',
+    background: 'rgba(255,255,255,0.03)',
+    color: 'var(--text-muted)',
+    fontFamily: "'JetBrains Mono', monospace",
+    fontSize: 11, cursor: 'pointer',
+    transition: 'all 0.15s',
+  },
+  moodPillActive: {
+    border: '1px solid rgba(195,192,255,0.4)',
+    color: 'var(--accent)',
+    background: 'rgba(195,192,255,0.08)',
   },
   regenBtn: {
-    marginLeft: 'auto',
-    background: 'var(--accent)',
-    color: '#fff',
-    border: 'none',
-    borderRadius: 8,
-    padding: '8px 20px',
-    fontSize: 13,
-    fontWeight: 700,
+    width: '100%', padding: '12px',
+    borderRadius: 12,
+    border: '1px solid rgba(255,255,255,0.1)',
+    background: 'rgba(255,255,255,0.04)',
+    color: 'var(--text-primary)',
+    fontFamily: "'Sora', sans-serif",
+    fontSize: 14, fontWeight: 600, letterSpacing: '0.02em',
     cursor: 'pointer',
-    letterSpacing: '0.02em',
-    fontFamily: "'Inter', sans-serif",
-    transition: 'opacity 0.15s',
-    whiteSpace: 'nowrap',
+    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+    transition: 'background 0.15s, opacity 0.15s',
   },
 };

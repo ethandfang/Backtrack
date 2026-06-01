@@ -47,7 +47,7 @@ async function submitSunoJob(prompt) {
     body: JSON.stringify({
       model: 'suno',
       prompt,
-      sunoParams: { custom_mode: false, instrumental: false, model_version: 'V5' },
+      sunoParams: { custom_mode: false, instrumental: true, model_version: 'V4' },
     }),
   });
 
@@ -75,7 +75,7 @@ function deepFind(obj, key) {
 
 // Poll Apiframe v2 until audio is ready (max ~3 minutes)
 async function pollForAudio(taskId) {
-  const maxAttempts = 36; // 36 * 5s = 3 min
+  const maxAttempts = 72; // 72 * 5s = 6 min
   const delay = (ms) => new Promise((r) => setTimeout(r, ms));
 
   for (let i = 0; i < maxAttempts; i++) {

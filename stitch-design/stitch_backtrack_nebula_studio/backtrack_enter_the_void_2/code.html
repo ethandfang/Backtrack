@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Backtrack | AI Synthesizer</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&amp;family=JetBrains+Mono:wght@400;500&amp;family=Sora:wght@600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "secondary-fixed": "#e9ddff",
+                    "on-tertiary-fixed-variant": "#004e5c",
+                    "on-primary": "#1d00a5",
+                    "surface-bright": "#39383f",
+                    "surface-container-lowest": "#0e0e14",
+                    "on-primary-container": "#dad7ff",
+                    "on-tertiary-container": "#93e8ff",
+                    "on-error": "#690005",
+                    "surface-tint": "#c3c0ff",
+                    "on-secondary-fixed-variant": "#5516be",
+                    "surface-container": "#1f1f25",
+                    "primary": "#c3c0ff",
+                    "outline-variant": "#464555",
+                    "secondary": "#d0bcff",
+                    "surface-container-low": "#1b1b21",
+                    "on-tertiary": "#003640",
+                    "on-background": "#e4e1ea",
+                    "outline": "#918fa1",
+                    "on-surface": "#e4e1ea",
+                    "tertiary": "#4cd7f6",
+                    "on-secondary-fixed": "#23005c",
+                    "inverse-primary": "#4d44e3",
+                    "inverse-on-surface": "#303037",
+                    "surface-variant": "#35343b",
+                    "inverse-surface": "#e4e1ea",
+                    "on-secondary": "#3c0091",
+                    "primary-container": "#4f46e5",
+                    "error-container": "#93000a",
+                    "secondary-fixed-dim": "#d0bcff",
+                    "tertiary-fixed": "#acedff",
+                    "background": "#131319",
+                    "on-tertiary-fixed": "#001f26",
+                    "surface-container-high": "#2a2930",
+                    "on-primary-fixed": "#0f0069",
+                    "error": "#ffb4ab",
+                    "secondary-container": "#571bc1",
+                    "on-surface-variant": "#c7c4d8",
+                    "surface-container-highest": "#35343b",
+                    "surface": "#131319",
+                    "tertiary-container": "#006a7c",
+                    "on-secondary-container": "#c4abff",
+                    "surface-dim": "#131319",
+                    "tertiary-fixed-dim": "#4cd7f6",
+                    "on-error-container": "#ffdad6",
+                    "primary-fixed": "#e2dfff",
+                    "primary-fixed-dim": "#c3c0ff",
+                    "on-primary-fixed-variant": "#3323cc"
+            },
+            "borderRadius": {
+                    "DEFAULT": "1rem",
+                    "lg": "2rem",
+                    "xl": "3rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "container-max": "1440px",
+                    "margin-mobile": "20px",
+                    "margin-desktop": "64px",
+                    "unit": "8px",
+                    "gutter": "24px"
+            },
+            "fontFamily": {
+                    "body-lg": ["Inter"],
+                    "body-md": ["Inter"],
+                    "label-sm": ["JetBrains Mono"],
+                    "label-tech": ["JetBrains Mono"],
+                    "headline-md": ["Sora"],
+                    "display-lg": ["Sora"],
+                    "display-lg-mobile": ["Sora"]
+            },
+            "fontSize": {
+                    "body-lg": ["18px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                    "body-md": ["16px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                    "label-sm": ["12px", {"lineHeight": "1.2", "fontWeight": "400"}],
+                    "label-tech": ["14px", {"lineHeight": "1.4", "letterSpacing": "0.05em", "fontWeight": "500"}],
+                    "headline-md": ["24px", {"lineHeight": "1.4", "letterSpacing": "0.02em", "fontWeight": "600"}],
+                    "display-lg": ["48px", {"lineHeight": "1.1", "letterSpacing": "0.1em", "fontWeight": "700"}],
+                    "display-lg-mobile": ["32px", {"lineHeight": "1.2", "letterSpacing": "0.05em", "fontWeight": "700"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body {
+            background-color: #020205;
+            overflow: hidden;
+            margin: 0;
+        }
+
+        /* Enhanced Nebula Background */
+        .nebula-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            overflow: hidden;
+        }
+
+        .nebula-cloud {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.15;
+            mix-blend-mode: screen;
+            animation: nebula-drift 30s ease-in-out infinite alternate;
+        }
+
+        .nebula-1 {
+            width: 80vw;
+            height: 80vw;
+            background: radial-gradient(circle, #4f46e5 0%, transparent 70%);
+            top: -20%;
+            left: -10%;
+            animation-duration: 45s;
+        }
+
+        .nebula-2 {
+            width: 70vw;
+            height: 70vw;
+            background: radial-gradient(circle, #571bc1 0%, transparent 70%);
+            bottom: -15%;
+            right: -5%;
+            animation-delay: -5s;
+        }
+
+        .nebula-3 {
+            width: 60vw;
+            height: 60vw;
+            background: radial-gradient(circle, #004e5c 0%, transparent 70%);
+            top: 20%;
+            right: 15%;
+            animation-duration: 35s;
+            animation-delay: -12s;
+        }
+
+        @keyframes nebula-drift {
+            0% { transform: translate(0, 0) scale(1); }
+            100% { transform: translate(10%, 5%) scale(1.1); }
+        }
+
+        .star-field {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* Complex Energy Orb */
+        @keyframes pulse-orb-core {
+            0%, 100% { transform: scale(1); opacity: 0.8; filter: blur(20px); }
+            50% { transform: scale(1.2); opacity: 1; filter: blur(40px); }
+        }
+        
+        @keyframes pulse-orb-glow {
+            0%, 100% { box-shadow: 0 0 40px rgba(195, 192, 255, 0.2); }
+            50% { box-shadow: 0 0 100px rgba(195, 192, 255, 0.5); }
+        }
+
+        .energy-orb {
+            width: 280px;
+            height: 280px;
+            background: radial-gradient(circle, rgba(195, 192, 255, 0.6) 0%, rgba(79, 70, 229, 0.15) 50%, transparent 75%);
+            border-radius: 50%;
+            animation: pulse-orb-core 6s ease-in-out infinite, pulse-orb-glow 6s ease-in-out infinite;
+        }
+
+        .particle-ring-canvas {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+        }
+
+        /* Soft Rhythmic Glows */
+        @keyframes rhythmic-glow {
+            0%, 100% { filter: drop-shadow(0 0 10px rgba(195, 192, 255, 0.3)); }
+            50% { filter: drop-shadow(0 0 25px rgba(195, 192, 255, 0.7)); }
+        }
+
+        .soft-glow-text {
+            animation: rhythmic-glow 4s ease-in-out infinite;
+        }
+
+        .plasma-glow {
+            box-shadow: 0 0 20px rgba(195, 192, 255, 0.3);
+            animation: button-glow 4s ease-in-out infinite;
+        }
+
+        @keyframes button-glow {
+            0%, 100% { box-shadow: 0 0 15px rgba(195, 192, 255, 0.2); }
+            50% { box-shadow: 0 0 35px rgba(195, 192, 255, 0.5); }
+        }
+
+        .wide-tracking {
+            letter-spacing: 0.4em;
+        }
+
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+
+        /* Accessibility: Reduced Motion */
+        @media (prefers-reduced-motion: reduce) {
+            .nebula-cloud, .energy-orb, .soft-glow-text, .plasma-glow, .animate-[spin_20s_linear_infinite], .animate-[spin_15s_linear_infinite_reverse] {
+                animation: none !important;
+                transition: none !important;
+            }
+            #particle-ring { display: none; }
+        }
+    </style>
+</head>
+<body class="flex flex-col items-center justify-center min-h-screen text-on-background selection:bg-primary/30">
+<!-- Atmospheric Background Layers -->
+<div class="nebula-container">
+<div class="nebula-cloud nebula-1"></div>
+<div class="nebula-cloud nebula-2"></div>
+<div class="nebula-cloud nebula-3"></div>
+</div>
+<canvas class="star-field" id="starfield"></canvas>
+<!-- Main Content Shell -->
+<main class="relative z-10 flex flex-col items-center text-center px-margin-mobile md:px-margin-desktop">
+<!-- Central Visualization -->
+<div class="relative mb-12 flex items-center justify-center">
+<div class="energy-orb absolute"></div>
+<!-- Dynamic Particle Ring -->
+<canvas class="particle-ring-canvas" height="400" id="particle-ring" width="400"></canvas>
+<!-- Inner Structural Rings -->
+<div class="w-64 h-64 border border-primary/20 rounded-full animate-[spin_20s_linear_infinite]"></div>
+<div class="absolute w-48 h-48 border border-tertiary/10 rounded-full animate-[spin_15s_linear_infinite_reverse]"></div>
+<!-- Abstract Particle Node -->
+<div class="absolute w-2 h-2 bg-primary rounded-full blur-[1px]"></div>
+</div>
+<!-- Hero Typography -->
+<div class="space-y-6">
+<h1 class="font-display-lg text-display-lg-mobile md:text-display-lg text-primary wide-tracking soft-glow-text">
+                BACKTRACK
+            </h1>
+<p class="font-label-tech text-label-tech text-on-surface-variant max-w-xs mx-auto md:max-w-none opacity-80">
+                Describe your beat. We'll build it.
+            </p>
+</div>
+<!-- Call to Action -->
+<div class="mt-16">
+<button class="group relative px-12 py-4 bg-primary-container text-on-primary-container font-headline-md text-headline-md rounded-full plasma-glow transition-all duration-500 hover:scale-105 active:scale-95 overflow-hidden" onclick="handleEnter()">
+<!-- Inner Plasma Reflection -->
+<div class="absolute inset-0 bg-gradient-to-tr from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+<span class="relative z-10 flex items-center gap-3">
+                    Enter Studio
+                    <span class="material-symbols-outlined transition-transform group-hover:translate-x-1" data-icon="arrow_forward">arrow_forward</span>
+</span>
+</button>
+<div class="mt-8 flex justify-center gap-8 font-label-sm text-label-sm text-outline">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px]" data-icon="auto_awesome">auto_awesome</span>
+                    Generative Core
+                </div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px]" data-icon="settings_input_component">settings_input_component</span>
+                    Studio Grade
+                </div>
+</div>
+</div>
+</main>
+<!-- Footer Identity -->
+<footer class="fixed bottom-12 left-0 w-full flex justify-center pointer-events-none">
+<div class="flex items-center gap-4 px-6 py-2 rounded-full border border-white/5 backdrop-blur-xl bg-white/5">
+<div class="w-2 h-2 bg-tertiary rounded-full animate-pulse"></div>
+<span class="font-label-tech text-label-tech text-on-surface-variant uppercase tracking-widest">System Online</span>
+</div>
+</footer>
+<!-- Interactive Layer / Starfield & Particle Script -->
+<script>
+        // Starfield System
+        const starCanvas = document.getElementById('starfield');
+        const starCtx = starCanvas.getContext('2d');
+        let width, height, stars;
+
+        function initStars() {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            starCanvas.width = width;
+            starCanvas.height = height;
+
+            stars = [];
+            const count = 200; // Increased count for depth
+
+            for (let i = 0; i < count; i++) {
+                stars.push({
+                    x: Math.random() * width,
+                    y: Math.random() * height,
+                    size: Math.random() * 2,
+                    opacity: Math.random(),
+                    speed: 0.02 + Math.random() * 0.08,
+                    depth: Math.random() // Depth layer factor
+                });
+            }
+        }
+
+        function drawStars() {
+            starCtx.clearRect(0, 0, width, height);
+
+            stars.forEach(star => {
+                const brightness = star.opacity * (0.5 + Math.sin(Date.now() * 0.001 * star.speed * 10) * 0.5);
+                starCtx.beginPath();
+                starCtx.arc(star.x, star.y, star.size * star.depth, 0, Math.PI * 2);
+                starCtx.fillStyle = `rgba(255, 255, 255, ${brightness})`;
+                starCtx.fill();
+
+                // Drifting movement based on depth
+                star.y -= star.speed * (0.5 + star.depth);
+                if (star.y < 0) {
+                    star.y = height;
+                    star.x = Math.random() * width;
+                }
+            });
+            requestAnimationFrame(drawStars);
+        }
+
+        // Orbital Particle Ring
+        const ringCanvas = document.getElementById('particle-ring');
+        const ringCtx = ringCanvas.getContext('2d');
+        const particles = [];
+        const particleCount = 40;
+
+        for (let i = 0; i < particleCount; i++) {
+            particles.push({
+                angle: Math.random() * Math.PI * 2,
+                radius: 130 + Math.random() * 40,
+                speed: 0.005 + Math.random() * 0.01,
+                size: 1 + Math.random() * 2,
+                opacity: 0.2 + Math.random() * 0.6
+            });
+        }
+
+        function drawRing() {
+            ringCtx.clearRect(0, 0, ringCanvas.width, ringCanvas.height);
+            const centerX = ringCanvas.width / 2;
+            const centerY = ringCanvas.height / 2;
+
+            particles.forEach(p => {
+                p.angle += p.speed;
+                const x = centerX + Math.cos(p.angle) * p.radius;
+                const y = centerY + Math.sin(p.angle) * p.radius;
+
+                ringCtx.beginPath();
+                ringCtx.arc(x, y, p.size, 0, Math.PI * 2);
+                ringCtx.fillStyle = `rgba(195, 192, 255, ${p.opacity})`;
+                ringCtx.fill();
+                
+                // Add a small trail/blur effect
+                ringCtx.shadowBlur = 5;
+                ringCtx.shadowColor = 'rgba(195, 192, 255, 0.5)';
+            });
+            requestAnimationFrame(drawRing);
+        }
+
+        window.addEventListener('resize', initStars);
+        
+        function handleEnter() {
+            const main = document.querySelector('main');
+            main.style.transition = 'all 1.5s cubic-bezier(0.4, 0, 0.2, 1)';
+            main.style.opacity = '0';
+            main.style.transform = 'scale(1.1) translateY(-20px)';
+            
+            setTimeout(() => {
+                console.log('Transitioning to Beat Lab...');
+            }, 1000);
+        }
+
+        initStars();
+        drawStars();
+        drawRing();
+    </script>
+</body></html>

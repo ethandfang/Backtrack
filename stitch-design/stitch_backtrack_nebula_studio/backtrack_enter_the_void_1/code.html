@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Backtrack | AI Synthesizer</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&amp;family=JetBrains+Mono:wght@400;500&amp;family=Sora:wght@600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "secondary-fixed": "#e9ddff",
+                    "on-tertiary-fixed-variant": "#004e5c",
+                    "on-primary": "#1d00a5",
+                    "surface-bright": "#39383f",
+                    "surface-container-lowest": "#0e0e14",
+                    "on-primary-container": "#dad7ff",
+                    "on-tertiary-container": "#93e8ff",
+                    "on-error": "#690005",
+                    "surface-tint": "#c3c0ff",
+                    "on-secondary-fixed-variant": "#5516be",
+                    "surface-container": "#1f1f25",
+                    "primary": "#c3c0ff",
+                    "outline-variant": "#464555",
+                    "secondary": "#d0bcff",
+                    "surface-container-low": "#1b1b21",
+                    "on-tertiary": "#003640",
+                    "on-background": "#e4e1ea",
+                    "outline": "#918fa1",
+                    "on-surface": "#e4e1ea",
+                    "tertiary": "#4cd7f6",
+                    "on-secondary-fixed": "#23005c",
+                    "inverse-primary": "#4d44e3",
+                    "inverse-on-surface": "#303037",
+                    "surface-variant": "#35343b",
+                    "inverse-surface": "#e4e1ea",
+                    "on-secondary": "#3c0091",
+                    "primary-container": "#4f46e5",
+                    "error-container": "#93000a",
+                    "secondary-fixed-dim": "#d0bcff",
+                    "tertiary-fixed": "#acedff",
+                    "background": "#131319",
+                    "on-tertiary-fixed": "#001f26",
+                    "surface-container-high": "#2a2930",
+                    "on-primary-fixed": "#0f0069",
+                    "error": "#ffb4ab",
+                    "secondary-container": "#571bc1",
+                    "on-surface-variant": "#c7c4d8",
+                    "surface-container-highest": "#35343b",
+                    "surface": "#131319",
+                    "tertiary-container": "#006a7c",
+                    "on-secondary-container": "#c4abff",
+                    "surface-dim": "#131319",
+                    "tertiary-fixed-dim": "#4cd7f6",
+                    "on-error-container": "#ffdad6",
+                    "primary-fixed": "#e2dfff",
+                    "primary-fixed-dim": "#c3c0ff",
+                    "on-primary-fixed-variant": "#3323cc"
+            },
+            "borderRadius": {
+                    "DEFAULT": "1rem",
+                    "lg": "2rem",
+                    "xl": "3rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "container-max": "1440px",
+                    "margin-mobile": "20px",
+                    "margin-desktop": "64px",
+                    "unit": "8px",
+                    "gutter": "24px"
+            },
+            "fontFamily": {
+                    "body-lg": ["Inter"],
+                    "body-md": ["Inter"],
+                    "label-sm": ["JetBrains Mono"],
+                    "label-tech": ["JetBrains Mono"],
+                    "headline-md": ["Sora"],
+                    "display-lg": ["Sora"],
+                    "display-lg-mobile": ["Sora"]
+            },
+            "fontSize": {
+                    "body-lg": ["18px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                    "body-md": ["16px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                    "label-sm": ["12px", {"lineHeight": "1.2", "fontWeight": "400"}],
+                    "label-tech": ["14px", {"lineHeight": "1.4", "letterSpacing": "0.05em", "fontWeight": "500"}],
+                    "headline-md": ["24px", {"lineHeight": "1.4", "letterSpacing": "0.02em", "fontWeight": "600"}],
+                    "display-lg": ["48px", {"lineHeight": "1.1", "letterSpacing": "0.1em", "fontWeight": "700"}],
+                    "display-lg-mobile": ["32px", {"lineHeight": "1.2", "letterSpacing": "0.05em", "fontWeight": "700"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body {
+            background-color: #020205;
+            overflow: hidden;
+            margin: 0;
+        }
+
+        .nebula-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 50% 50%, rgba(79, 70, 229, 0.15) 0%, transparent 60%),
+                        radial-gradient(circle at 80% 20%, rgba(76, 215, 246, 0.1) 0%, transparent 40%);
+            z-index: -1;
+            filter: blur(100px);
+        }
+
+        .star-field {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        @keyframes pulse-orb {
+            0%, 100% { transform: scale(1); opacity: 0.8; filter: blur(20px); }
+            50% { transform: scale(1.1); opacity: 1; filter: blur(35px); }
+        }
+
+        .energy-orb {
+            width: 320px;
+            height: 320px;
+            background: radial-gradient(circle, rgba(195, 192, 255, 0.4) 0%, rgba(79, 70, 229, 0.1) 60%, transparent 70%);
+            border-radius: 50%;
+            animation: pulse-orb 8s ease-in-out infinite;
+            box-shadow: 0 0 80px rgba(195, 192, 255, 0.2);
+        }
+
+        .plasma-glow {
+            box-shadow: 0 0 20px rgba(195, 192, 255, 0.4), inset 0 0 10px rgba(195, 192, 255, 0.6);
+        }
+
+        .wide-tracking {
+            letter-spacing: 0.4em;
+        }
+
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+</head>
+<body class="flex flex-col items-center justify-center min-h-screen text-on-background selection:bg-primary/30">
+<!-- Atmospheric Background -->
+<div class="nebula-bg"></div>
+<canvas class="star-field" id="starfield"></canvas>
+<!-- Main Content Shell -->
+<main class="relative z-10 flex flex-col items-center text-center px-margin-mobile md:px-margin-desktop">
+<!-- Central Visualization -->
+<div class="relative mb-12 flex items-center justify-center">
+<div class="energy-orb absolute"></div>
+<!-- Inner Ring -->
+<div class="w-64 h-64 border border-primary/20 rounded-full animate-[spin_20s_linear_infinite]"></div>
+<div class="absolute w-48 h-48 border border-tertiary/10 rounded-full animate-[spin_15s_linear_infinite_reverse]"></div>
+<!-- Abstract Particle Node -->
+<div class="absolute w-2 h-2 bg-primary rounded-full blur-[1px]"></div>
+</div>
+<!-- Hero Typography -->
+<div class="space-y-6">
+<h1 class="font-display-lg text-display-lg-mobile md:text-display-lg text-primary wide-tracking drop-shadow-[0_0_15px_rgba(195,192,255,0.5)]">
+                BACKTRACK
+            </h1>
+<p class="font-label-tech text-label-tech text-on-surface-variant max-w-xs mx-auto md:max-w-none opacity-80">
+                Describe your beat. We'll build it.
+            </p>
+</div>
+<!-- Call to Action -->
+<div class="mt-16">
+<button class="group relative px-12 py-4 bg-primary-container text-on-primary-container font-headline-md text-headline-md rounded-full plasma-glow transition-all duration-500 hover:scale-105 active:scale-95 overflow-hidden" onclick="handleEnter()">
+<!-- Inner Plasma Reflection -->
+<div class="absolute inset-0 bg-gradient-to-tr from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+<span class="relative z-10 flex items-center gap-3">
+                    Enter Studio
+                    <span class="material-symbols-outlined transition-transform group-hover:translate-x-1" data-icon="arrow_forward">arrow_forward</span>
+</span>
+</button>
+<div class="mt-8 flex justify-center gap-8 font-label-sm text-label-sm text-outline">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px]" data-icon="auto_awesome">auto_awesome</span>
+                    Generative Core
+                </div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px]" data-icon="settings_input_component">settings_input_component</span>
+                    Studio Grade
+                </div>
+</div>
+</div>
+</main>
+<!-- Footer Identity -->
+<footer class="fixed bottom-12 left-0 w-full flex justify-center pointer-events-none">
+<div class="flex items-center gap-4 px-6 py-2 rounded-full border border-white/5 backdrop-blur-xl bg-white/5">
+<div class="w-2 h-2 bg-tertiary rounded-full animate-pulse"></div>
+<span class="font-label-tech text-label-tech text-on-surface-variant uppercase tracking-widest">System Online</span>
+</div>
+</footer>
+<!-- Interactive Layer / Starfield Script -->
+<script>
+        const canvas = document.getElementById('starfield');
+        const ctx = canvas.getContext('2d');
+
+        let width, height, stars;
+
+        function init() {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            canvas.width = width;
+            canvas.height = height;
+
+            stars = [];
+            const count = 150;
+
+            for (let i = 0; i < count; i++) {
+                stars.push({
+                    x: Math.random() * width,
+                    y: Math.random() * height,
+                    size: Math.random() * 1.5,
+                    opacity: Math.random(),
+                    speed: 0.05 + Math.random() * 0.1
+                });
+            }
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, width, height);
+
+            stars.forEach(star => {
+                ctx.beginPath();
+                ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(255, 255, 255, ${star.opacity})`;
+                ctx.fill();
+
+                // Drifting movement
+                star.y -= star.speed;
+                if (star.y < 0) {
+                    star.y = height;
+                    star.x = Math.random() * width;
+                }
+
+                // Twinkle effect
+                star.opacity += (Math.random() - 0.5) * 0.05;
+                if (star.opacity < 0.1) star.opacity = 0.1;
+                if (star.opacity > 0.8) star.opacity = 0.8;
+            });
+
+            requestAnimationFrame(draw);
+        }
+
+        window.addEventListener('resize', init);
+        
+        function handleEnter() {
+            const main = document.querySelector('main');
+            main.style.transition = 'all 1.5s cubic-bezier(0.4, 0, 0.2, 1)';
+            main.style.opacity = '0';
+            main.style.transform = 'scale(1.1) translateY(-20px)';
+            
+            setTimeout(() => {
+                // Future navigation logic would go here
+                console.log('Transitioning to Beat Lab...');
+            }, 1000);
+        }
+
+        init();
+        draw();
+    </script>
+</body></html>
