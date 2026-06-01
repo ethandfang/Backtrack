@@ -20,7 +20,7 @@ async function translateToMusicPrompt(userMessage, previousPrompt) {
   if (previousPrompt) {
     messages.push({
       role: 'user',
-      content: `Previous music prompt: ${previousPrompt}\n\nEdit command: ${userMessage}`,
+      content: `Previous music prompt: ${previousPrompt}\n\nEdit command: ${userMessage}\n\nMake only the changes the user asked for. Preserve everything else about the previous prompt. Do not start from scratch.`,
     });
   } else {
     messages.push({ role: 'user', content: userMessage });

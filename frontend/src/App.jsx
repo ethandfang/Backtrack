@@ -2,68 +2,98 @@ import { useState, useRef } from 'react';
 import ChatSidebar from './components/ChatSidebar.jsx';
 import AudioPlayer from './components/AudioPlayer.jsx';
 import BeatCard from './components/BeatCard.jsx';
+import LoadingVisualizer from './components/LoadingVisualizer.jsx';
+import BeatControls from './components/BeatControls.jsx';
+import BeatTabs from './components/BeatTabs.jsx';
 
 export default function App() {
   const [messages, setMessages] = useState([]);
-  const [currentBeat, setCurrentBeat] = useState(null); // { audioUrl, imageUrl, musicPrompt }
+  const [beats, setBeats] = useState([]);
+  const [activeBeatIndex, setActiveBeatIndex] = useState(0);
   const [previousPrompt, setPreviousPrompt] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [controls, setControls] = useState({ bpm: 120, energy: 'medium', moods: [] });
   const audioRef = useRef(null);
+  const beatCountRef = useRef(0);
 
+  const currentBeat = beats[activeBeatIndex] ?? null;
+
+  // Core generation — called by both chat sends and controls regenerate
+  async function callApi(userMessage) {
+    const res = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: userMessage, previousPrompt }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error ?? 'Unknown server error');
+
+    beatCountRef.current += 1;
+    const beat = {
+      id: Date.now(),
+      label: `Beat ${beatCountRef.current}`,
+      audioUrl: data.audioUrl,
+      imageUrl: data.imageUrl,
+      musicPrompt: data.musicPrompt,
+      controls: { ...controls },
+    };
+
+    setBeats((prev) => {
+      const next = [...prev, beat];
+      setActiveBeatIndex(next.length - 1);
+      return next;
+    });
+    setPreviousPrompt(data.musicPrompt);
+    return beat;
+  }
+
+  // Chat send
   async function handleSend(userMessage) {
     if (!userMessage.trim() || loading) return;
-
-    const userMsg = { role: 'user', content: userMessage };
-    setMessages((prev) => [...prev, userMsg]);
+    setMessages((prev) => [...prev, { role: 'user', content: userMessage }]);
     setLoading(true);
-
     try {
-      const res = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: userMessage, previousPrompt }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) throw new Error(data.error ?? 'Unknown server error');
-
-      const beat = {
-        audioUrl: data.audioUrl,
-        imageUrl: data.imageUrl,
-        musicPrompt: data.musicPrompt,
-      };
-
-      setCurrentBeat(beat);
-      setPreviousPrompt(data.musicPrompt);
-
-      const assistantMsg = {
-        role: 'assistant',
-        content: data.musicPrompt,
-        beat,
-      };
-      setMessages((prev) => [...prev, assistantMsg]);
+      const beat = await callApi(userMessage);
+      setMessages((prev) => [...prev, { role: 'assistant', content: beat.musicPrompt, beat }]);
     } catch (err) {
-      setMessages((prev) => [
-        ...prev,
-        { role: 'error', content: err.message },
-      ]);
+      setMessages((prev) => [...prev, { role: 'error', content: err.message }]);
     } finally {
       setLoading(false);
     }
   }
 
+  // Controls regenerate — builds a natural language command from the sliders/toggles
+  async function handleRegenerate() {
+    if (loading) return;
+    const moodStr = controls.moods.length > 0 ? `, moods: ${controls.moods.join(', ')}` : '';
+    const msg = `Adjust to ${controls.bpm} BPM, ${controls.energy} energy${moodStr}`;
+    setMessages((prev) => [...prev, { role: 'user', content: msg }]);
+    setLoading(true);
+    try {
+      const beat = await callApi(msg);
+      setMessages((prev) => [...prev, { role: 'assistant', content: beat.musicPrompt, beat }]);
+    } catch (err) {
+      setMessages((prev) => [...prev, { role: 'error', content: err.message }]);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // Clicking "Load this beat" in the chat sidebar
+  function handleSelectBeat(beat) {
+    const idx = beats.findIndex((b) => b.id === beat.id);
+    if (idx !== -1) setActiveBeatIndex(idx);
+  }
+
   return (
     <div style={styles.layout}>
-      {/* Left: Chat sidebar */}
       <ChatSidebar
         messages={messages}
         loading={loading}
         onSend={handleSend}
-        onSelectBeat={(beat) => setCurrentBeat(beat)}
+        onSelectBeat={handleSelectBeat}
       />
 
-      {/* Right: Player + beat info */}
       <main style={styles.main}>
         <header style={styles.header}>
           <div style={styles.logo}>
@@ -73,17 +103,29 @@ export default function App() {
           <p style={styles.tagline}>AI-Powered Beat Maker</p>
         </header>
 
+        <BeatTabs beats={beats} activeBeatIndex={activeBeatIndex} onSelect={setActiveBeatIndex} />
+
         <div style={styles.playerArea}>
-          {currentBeat ? (
+          {loading ? (
+            <LoadingVisualizer />
+          ) : currentBeat ? (
             <BeatCard beat={currentBeat} audioRef={audioRef} />
           ) : (
             <EmptyState />
           )}
         </div>
 
-        {currentBeat && (
+        {currentBeat && !loading && (
           <AudioPlayer audioRef={audioRef} audioUrl={currentBeat.audioUrl} />
         )}
+
+        <BeatControls
+          controls={controls}
+          onChange={setControls}
+          onRegenerate={handleRegenerate}
+          loading={loading}
+          hasBeat={beats.length > 0}
+        />
       </main>
     </div>
   );
@@ -115,10 +157,11 @@ const styles = {
     overflow: 'hidden',
   },
   header: {
-    padding: '24px 32px 0',
+    padding: '20px 32px 0',
     display: 'flex',
     alignItems: 'baseline',
     gap: 16,
+    flexShrink: 0,
   },
   logo: {
     display: 'flex',
@@ -147,7 +190,7 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: '32px',
+    padding: '24px 32px',
     overflow: 'hidden',
   },
   emptyState: {

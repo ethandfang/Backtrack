@@ -1,4 +1,22 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+
+async function downloadMp3(audioUrl, filename) {
+  try {
+    const res = await fetch(audioUrl);
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  } catch {
+    // CORS fallback — open in new tab so user can save manually
+    window.open(audioUrl, '_blank');
+  }
+}
 
 // Parses key metadata values from the music prompt string
 function parseMeta(prompt) {
@@ -31,6 +49,7 @@ function parseMeta(prompt) {
 
 export default function BeatCard({ beat, audioRef }) {
   const meta = parseMeta(beat.musicPrompt);
+  const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
     if (audioRef.current) {
@@ -39,8 +58,22 @@ export default function BeatCard({ beat, audioRef }) {
     }
   }, [beat.audioUrl]);
 
+  async function handleExport() {
+    setExporting(true);
+    await downloadMp3(beat.audioUrl, `${(beat.label ?? 'Beat').replace(' ', '-')}.mp3`);
+    setExporting(false);
+  }
+
   return (
     <div style={styles.card}>
+      {/* Header row: label + export */}
+      <div style={styles.cardHeader}>
+        <span style={styles.beatLabel}>{beat.label ?? 'Beat'}</span>
+        <button onClick={handleExport} disabled={exporting} style={styles.exportBtn}>
+          {exporting ? 'Downloading…' : '↓ Export MP3'}
+        </button>
+      </div>
+
       {/* Cover art or gradient placeholder */}
       <div style={styles.coverWrap}>
         {beat.imageUrl ? (
@@ -86,6 +119,29 @@ function MetaChip({ label, value, accent }) {
 }
 
 const styles = {
+  cardHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  beatLabel: {
+    fontSize: 15,
+    fontWeight: 700,
+    color: 'var(--text-primary)',
+    letterSpacing: '-0.2px',
+  },
+  exportBtn: {
+    background: 'transparent',
+    border: '1px solid var(--border)',
+    color: 'var(--text-secondary)',
+    fontSize: 12,
+    fontWeight: 600,
+    padding: '5px 12px',
+    borderRadius: 6,
+    cursor: 'pointer',
+    fontFamily: "'Inter', sans-serif",
+    letterSpacing: '0.02em',
+  },
   card: {
     width: '100%',
     maxWidth: 560,
