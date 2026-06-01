@@ -387,31 +387,48 @@ export default function App() {
 
   // ── API ──────────────────────────────────────────────
   async function callApi(userMessage) {
-    const res = await fetch('/api/chat', {
+    // Step 1: Claude translate + submit Suno job (fast, ~5s)
+    const submitRes = await fetch('/api/submit', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ message: userMessage, previousPrompt }),
     });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error ?? 'Unknown server error');
+    const submitData = await submitRes.json();
+    if (!submitRes.ok) throw new Error(submitData.error ?? 'Submit failed');
 
-    beatCountRef.current += 1;
-    const beat = {
-      id: Date.now(),
-      label: `Beat ${beatCountRef.current}`,
-      audioUrl: data.audioUrl,
-      imageUrl: data.imageUrl,
-      musicPrompt: data.musicPrompt,
-      controls: { ...controls },
-    };
+    const { taskId, musicPrompt } = submitData;
 
-    setBeats((prev) => {
-      const next = [...prev, beat];
-      setActiveBeatIndex(next.length - 1);
-      return next;
-    });
-    setPreviousPrompt(data.musicPrompt);
-    return beat;
+    // Step 2: Poll from frontend — each call is a fast single-status-check
+    const delay = (ms) => new Promise((r) => setTimeout(r, ms));
+    for (let i = 0; i < 72; i++) {
+      await delay(5000);
+      const pollRes = await fetch(`/api/poll?taskId=${encodeURIComponent(taskId)}`);
+      const pollData = await pollRes.json();
+      if (!pollRes.ok) throw new Error(pollData.error ?? 'Poll failed');
+
+      if (pollData.status === 'complete') {
+        beatCountRef.current += 1;
+        const beat = {
+          id: Date.now(),
+          label: `Beat ${beatCountRef.current}`,
+          audioUrl: pollData.audioUrl,
+          imageUrl: pollData.imageUrl,
+          musicPrompt,
+          controls: { ...controls },
+        };
+        setBeats((prev) => {
+          const next = [...prev, beat];
+          setActiveBeatIndex(next.length - 1);
+          return next;
+        });
+        setPreviousPrompt(musicPrompt);
+        return beat;
+      }
+
+      if (pollData.status === 'failed') throw new Error('Suno generation failed');
+    }
+
+    throw new Error('Generation timed out after 6 minutes');
   }
 
   async function handleSend(userMessage) {
