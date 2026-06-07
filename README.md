@@ -6,7 +6,7 @@ Backtrack is a full-stack AI music production app that turns natural language in
 
 ---
 
-## How It Works
+## How App Works
 
 ```
 User types a prompt
