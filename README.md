@@ -2,7 +2,7 @@
 
 > Describe a beat in plain English. Claude interprets it. Suno builds it. You hear it in minutes.
 
-Backtrack is a full-stack AI music production app that turns natural language into fully-generated audio tracks. Type something like *"dark trap, 140 BPM, A minor, heavy 808s"* — and within a couple minutes you have a real audio file you can play, iterate on, and export.
+Backtrack is a full-stack AI music production app that turns natural language into fully-generated audio tracks. Type something like *"140 BPM, A minor, heavy 808s"* — and within a couple minutes you have a real audio file you can play, iterate on, and export.
 
 ---
 
